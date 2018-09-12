@@ -2,7 +2,7 @@
 
 Get your OAuth application registered in Facebook Developer account and obtain App ID and App Secret values.
 
-The OAuth redirection endpoint of the client application is https://localhost:<port>/callback.
+The OAuth redirection endpoint of the client application is "https://localhost:8090/callback" (put your port number)
 
 Once you download/clone this project, you need to modify the following two files.
 
@@ -40,4 +40,4 @@ After the above changes, build the project with Maven. (eg: mvn clean package).
 
 Then run your project (eg: java -jar target\facebookauth-0.0.1-SNAPSHOT.war --server.port=<port>)
 
-You can access the application with the URL https://localhost:<port>/
+You can access the application with the URL https://localhost:8090/ (put your port number)
