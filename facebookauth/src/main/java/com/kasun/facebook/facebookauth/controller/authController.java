@@ -9,16 +9,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-
 import com.kasun.facebook.facebookauth.Model.UserPhoto;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -28,7 +25,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 
 @Controller
 public class authController {
@@ -65,10 +61,9 @@ public class authController {
 	    }
 			
     @RequestMapping(value="callback", method = RequestMethod.GET)
-	public String getitem(@RequestParam("code") String token,Model model) throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException{
+	public String getAccessToken(@RequestParam("code") String token,Model model) throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException{
 	    	
-	    	final String TOKEN_ENDPOINT =
-                    "https://graph.facebook.com/oauth/access_token";
+	    	final String TOKEN_ENDPOINT = "https://graph.facebook.com/oauth/access_token";
             final String GRANT_TYPE = "authorization_code";
             final String REDIRECT_URI = "https://localhost:8090/callback";
             final String CLIENT_ID = "1315552335241962";
@@ -104,31 +99,51 @@ public class authController {
     		    JSONObject albumobject = albums.getJSONArray("data").getJSONObject(i);
 
     		    String id = albumobject.getString("id");
-    		    
     		    JSONObject photos = new JSONObject(getJsonData("https://graph.facebook.com/v2.8/"+id+"/photos",accessToken));
     		    
             	for (int p = 0; p < photos.getJSONArray("data").length(); p++) {
         		    JSONObject photos_object = photos.getJSONArray("data").getJSONObject(p);
         		    String p_id = photos_object.getString("id");
         		   
-
-        		    JSONObject photo_object = new JSONObject(getJsonData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));
-        		    
+        		    JSONObject photo_object = new JSONObject(getJsonData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));	    
         		    System.out.println(getJsonData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));
                     JSONObject image = photo_object.getJSONArray("images").getJSONObject(1);
         		    String link = image.getString("source");
                     UserPhoto up = new UserPhoto();
                     up.setLink(link);
                     linkList.add(up);
-            	}
-                    
+            	}              
     		}
     	model.addAttribute("photos", linkList);
-  	       return "images";
-	     
+  	    return "images";    
 	    }
 	    
-	    
+	    public String getResourceData(String url,String accessToken) throws IOException{
+	    	
+	    		URL urlobj = new URL(url);
+	    		HttpURLConnection con = (HttpURLConnection) urlobj.openConnection();
+
+	    		//optional default is GET
+	    		con.setRequestMethod("GET");
+
+	    		//add request header
+	    		con.setRequestProperty("Authorization", "Bearer " + accessToken);
+
+	    		int responseCode = con.getResponseCode();
+	    		System.out.println("\nSending 'GET' request to URL : " + url);
+	    		System.out.println("Response Code : " + responseCode);
+
+	    		BufferedReader in = new BufferedReader(
+	    		        new InputStreamReader(con.getInputStream()));
+	    		String inputLine;
+	    		StringBuffer response = new StringBuffer();
+
+	    		while ((inputLine = in.readLine()) != null) {
+	    			response.append(inputLine);
+	    		}
+	    		in.close();
+	    		return response.toString();
+	    }	    
 
 	
 }
