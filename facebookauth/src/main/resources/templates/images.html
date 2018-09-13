@@ -23,6 +23,7 @@
         <tr>
             <th>Image</th>
         </tr>
+        <!-- display each image received by controller -->
         <tr th:each="photo : ${photos}">
           <td>
           <img th:src="@{${photo.link}}" width="300" height="150"/>

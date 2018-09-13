@@ -31,14 +31,17 @@ public class authController {
 	
 	ArrayList<UserPhoto> linkList = new ArrayList<>();
 	
+	//home page
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String index() {
 		return "index";
 	}
 
+	//get authorization code request
 	@RequestMapping(value = "/redirect", method = RequestMethod.GET)
 	public void getAuthCode(HttpServletResponse httpServletResponse) {
 	    	
+		//making url
 	    	   String AUTH_ENDPOINT = "https://www.facebook.com/dialog/oauth";
 	    	   String RESPONSE_TYPE = "code";
 	    	   String CLIENT_ID = "1315552335241962";
@@ -56,13 +59,16 @@ public class authController {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}     
+			//send GET request
 	        httpServletResponse.setHeader("Location", requestEndpoint);
 	        httpServletResponse.setStatus(302);
 	    }
-			
+		
+	//handle callback url and get authorization code
     @RequestMapping(value="callback", method = RequestMethod.GET)
 	public String getAccessToken(@RequestParam("code") String token,Model model) throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException{
 	    	
+    	//making url
 	    	final String TOKEN_ENDPOINT = "https://graph.facebook.com/oauth/access_token";
             final String GRANT_TYPE = "authorization_code";
             final String REDIRECT_URI = "https://localhost:8090/callback";
@@ -75,11 +81,14 @@ public class authController {
                     "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI,"UTF-8") +
                     "&client_id=" + CLIENT_ID);
             
+            //encode app id and app secret
             String clientCredentials = CLIENT_ID + ":" + CLIENT_SECRET;
             String encodedClientCredentials = new String(Base64.encodeBase64(clientCredentials.getBytes()));
+            //set Authorization header
             httpPost.setHeader("Authorization", "Basic " +encodedClientCredentials);
             
             CloseableHttpClient httpClient = HttpClients.createDefault();
+            //send POST request
             HttpResponse httpResponse = httpClient.execute(httpPost);
 
             // Handle access token response
@@ -87,46 +96,53 @@ public class authController {
                     (httpResponse.getEntity().getContent());
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
-
-            System.out.println(line);
         
+            //get access token
             final JSONObject obj = new JSONObject(line);
             String accessToken = obj.getString("access_token");
             
-    		JSONObject albums = new JSONObject(getJsonData("https://graph.facebook.com/v2.8/me/albums",accessToken));
+            //get albums data
+    		JSONObject albums = new JSONObject(getResourceData("https://graph.facebook.com/v2.8/me/albums",accessToken));
          
     		for (int i = 0; i < albums.getJSONArray("data").length(); i++) {
+    			//extract each JSON object from JSON array
     		    JSONObject albumobject = albums.getJSONArray("data").getJSONObject(i);
-
+    		    //get album id
     		    String id = albumobject.getString("id");
-    		    JSONObject photos = new JSONObject(getJsonData("https://graph.facebook.com/v2.8/"+id+"/photos",accessToken));
+    		    //get images in particular album
+    		    JSONObject photos = new JSONObject(getResourceData("https://graph.facebook.com/v2.8/"+id+"/photos",accessToken));
     		    
             	for (int p = 0; p < photos.getJSONArray("data").length(); p++) {
+            		//extract each JSON object from JSON array
         		    JSONObject photos_object = photos.getJSONArray("data").getJSONObject(p);
+        		    //get photo id
         		    String p_id = photos_object.getString("id");
         		   
-        		    JSONObject photo_object = new JSONObject(getJsonData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));	    
-        		    System.out.println(getJsonData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));
+        		    //get image url in particular image
+        		    JSONObject photo_object = new JSONObject(getResourceData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));	    
+        		    //extract image link from 'source' attribute
                     JSONObject image = photo_object.getJSONArray("images").getJSONObject(1);
         		    String link = image.getString("source");
                     UserPhoto up = new UserPhoto();
                     up.setLink(link);
+                    //added links to the arraylist as UserPhoto objects
                     linkList.add(up);
             	}              
     		}
+    	//bind image url array with html page
     	model.addAttribute("photos", linkList);
+    	//display images.html page
   	    return "images";    
 	    }
 	    
+    	//get user resources
 	    public String getResourceData(String url,String accessToken) throws IOException{
 	    	
 	    		URL urlobj = new URL(url);
 	    		HttpURLConnection con = (HttpURLConnection) urlobj.openConnection();
-
-	    		//optional default is GET
 	    		con.setRequestMethod("GET");
 
-	    		//add request header
+	    		//add request header with access token
 	    		con.setRequestProperty("Authorization", "Bearer " + accessToken);
 
 	    		int responseCode = con.getResponseCode();
@@ -142,6 +158,7 @@ public class authController {
 	    			response.append(inputLine);
 	    		}
 	    		in.close();
+	    		//return JSON data
 	    		return response.toString();
 	    }	    
 
