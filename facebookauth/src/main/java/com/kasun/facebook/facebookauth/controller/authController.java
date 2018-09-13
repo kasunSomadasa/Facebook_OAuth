@@ -32,7 +32,6 @@ import org.json.JSONObject;
 
 @Controller
 public class authController {
-
 	
 	ArrayList<UserPhoto> linkList = new ArrayList<>();
 	
@@ -41,9 +40,8 @@ public class authController {
 		return "index";
 	}
 
-	
-	   @RequestMapping(value = "/redirect", method = RequestMethod.GET)
-	    public void getAuthCode(HttpServletResponse httpServletResponse) {
+	@RequestMapping(value = "/redirect", method = RequestMethod.GET)
+	public void getAuthCode(HttpServletResponse httpServletResponse) {
 	    	
 	    	   String AUTH_ENDPOINT = "https://www.facebook.com/dialog/oauth";
 	    	   String RESPONSE_TYPE = "code";
@@ -61,11 +59,76 @@ public class authController {
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
-	            
+			}     
 	        httpServletResponse.setHeader("Location", requestEndpoint);
 	        httpServletResponse.setStatus(302);
 	    }
-		
+			
+    @RequestMapping(value="callback", method = RequestMethod.GET)
+	public String getitem(@RequestParam("code") String token,Model model) throws ClientProtocolException, IOException, UnsupportedOperationException, JSONException{
+	    	
+	    	final String TOKEN_ENDPOINT =
+                    "https://graph.facebook.com/oauth/access_token";
+            final String GRANT_TYPE = "authorization_code";
+            final String REDIRECT_URI = "https://localhost:8090/callback";
+            final String CLIENT_ID = "1315552335241962";
+            final String CLIENT_SECRET = "87df47821d7cc2df910fb8756e1e674b";
+	    	
+            HttpPost httpPost = new HttpPost(TOKEN_ENDPOINT +
+            		"?grant_type=" + GRANT_TYPE +
+                    "&code=" + token +
+                    "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI,"UTF-8") +
+                    "&client_id=" + CLIENT_ID);
+            
+            String clientCredentials = CLIENT_ID + ":" + CLIENT_SECRET;
+            String encodedClientCredentials = new String(Base64.encodeBase64(clientCredentials.getBytes()));
+            httpPost.setHeader("Authorization", "Basic " +encodedClientCredentials);
+            
+            CloseableHttpClient httpClient = HttpClients.createDefault();
+            HttpResponse httpResponse = httpClient.execute(httpPost);
 
+            // Handle access token response
+            Reader reader = new InputStreamReader
+                    (httpResponse.getEntity().getContent());
+            BufferedReader bufferedReader = new BufferedReader(reader);
+            String line = bufferedReader.readLine();
+
+            System.out.println(line);
+        
+            final JSONObject obj = new JSONObject(line);
+            String accessToken = obj.getString("access_token");
+            
+    		JSONObject albums = new JSONObject(getJsonData("https://graph.facebook.com/v2.8/me/albums",accessToken));
+         
+    		for (int i = 0; i < albums.getJSONArray("data").length(); i++) {
+    		    JSONObject albumobject = albums.getJSONArray("data").getJSONObject(i);
+
+    		    String id = albumobject.getString("id");
+    		    
+    		    JSONObject photos = new JSONObject(getJsonData("https://graph.facebook.com/v2.8/"+id+"/photos",accessToken));
+    		    
+            	for (int p = 0; p < photos.getJSONArray("data").length(); p++) {
+        		    JSONObject photos_object = photos.getJSONArray("data").getJSONObject(p);
+        		    String p_id = photos_object.getString("id");
+        		   
+
+        		    JSONObject photo_object = new JSONObject(getJsonData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));
+        		    
+        		    System.out.println(getJsonData("https://graph.facebook.com/"+p_id+"?fields=images",accessToken));
+                    JSONObject image = photo_object.getJSONArray("images").getJSONObject(1);
+        		    String link = image.getString("source");
+                    UserPhoto up = new UserPhoto();
+                    up.setLink(link);
+                    linkList.add(up);
+            	}
+                    
+    		}
+    	model.addAttribute("photos", linkList);
+  	       return "images";
+	     
+	    }
+	    
+	    
+
+	
 }
