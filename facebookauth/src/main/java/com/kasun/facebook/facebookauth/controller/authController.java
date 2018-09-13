@@ -41,4 +41,35 @@ public class authController {
 		return "index";
 	}
 
+	
+	   @RequestMapping(value = "/redirect", method = RequestMethod.GET)
+	    public void method(HttpServletResponse httpServletResponse) {
+	    	
+	    	   String AUTH_ENDPOINT = "https://www.facebook.com/dialog/oauth";
+	    	   String RESPONSE_TYPE = "code";
+	    	   String CLIENT_ID = "1315552335241962";
+	    	   String REDIRECT_URI = "https://localhost:8090/callback";
+	    	   String SCOPE = "public_profile user_posts user_friends user_photos";
+	    	   
+	    	   String requestEndpoint = null;
+			try {
+				requestEndpoint = AUTH_ENDPOINT + "?" +
+				            "response_type=" + RESPONSE_TYPE + "&" +
+				            "client_id=" + CLIENT_ID + "&" +
+				            "redirect_uri=" + URLEncoder.encode(REDIRECT_URI,"UTF-8" ) + "&" +
+				            "scope=" + URLEncoder.encode(SCOPE,"UTF-8" );
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	            
+	        httpServletResponse.setHeader("Location", requestEndpoint);
+	        httpServletResponse.setStatus(302);
+	    }
+		
+
+	 
+	
+
+
 }
