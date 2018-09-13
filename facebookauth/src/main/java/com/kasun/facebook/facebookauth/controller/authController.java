@@ -43,7 +43,7 @@ public class authController {
 
 	
 	   @RequestMapping(value = "/redirect", method = RequestMethod.GET)
-	    public void method(HttpServletResponse httpServletResponse) {
+	    public void getAuthCode(HttpServletResponse httpServletResponse) {
 	    	
 	    	   String AUTH_ENDPOINT = "https://www.facebook.com/dialog/oauth";
 	    	   String RESPONSE_TYPE = "code";
@@ -67,9 +67,5 @@ public class authController {
 	        httpServletResponse.setStatus(302);
 	    }
 		
-
-	 
-	
-
 
 }
